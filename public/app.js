@@ -1,12 +1,42 @@
 /* eslint-env browser */
 
-// --- LOGIIKKA (Testattava osa, toimii missä vain) ---
+// --- LOGIIKKA (Testattavat funktiot) ---
+
 export function poistaTehtava(nykyisetTehtavat, poistettavaId) {
   return nykyisetTehtavat.filter((task) => task.id !== poistettavaId);
 }
-// ----------------------------------------------------
 
-// --- KÄYTTÖLIITTYMÄ (Ajetaan vain selaimessa) ---
+/**
+ * Päivittää yhden tehtävän tiedot listassa.
+ * @param {Array} tasks - Kaikki tehtävät
+ * @param {string} id - Muokattavan tehtävän ID
+ * @param {Object} uudetTiedot - Objekti, jossa on päivitettävät kentät (esim. topic, priority)
+ * @returns {Array} Uusi lista tehtävistä
+ */
+export function muokkaaTehtava(tasks, id, uudetTiedot) {
+  return tasks.map((task) => {
+    if (task.id !== id) return task; // Jos ei ole tämä taski, palauta sellaisenaan
+
+    // Logiikka: Jos status on 'done', completed on true. Muuten pidetään vanha tai false.
+    const isCompleted =
+      uudetTiedot.status === 'done'
+        ? true
+        : uudetTiedot.status
+        ? false
+        : task.completed;
+
+    return {
+      ...task, // Vanhat tiedot pohjalle
+      ...uudetTiedot, // Uudet tiedot päälle
+      completed: isCompleted,
+      updatedAt: Date.now(),
+    };
+  });
+}
+
+// ----------------------------------------
+
+// --- KÄYTTÖLIITTYMÄ (Vain selaimessa) ---
 if (typeof document !== 'undefined') {
   (function () {
     'use strict';
@@ -128,7 +158,6 @@ if (typeof document !== 'undefined') {
       saveBtn.textContent = 'Save Task';
     }
 
-    // Tapahtumankuuntelijat
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const now = Date.now();
@@ -144,16 +173,11 @@ if (typeof document !== 'undefined') {
       }
 
       if (inputId.value) {
-        const idx = tasks.findIndex((t) => t.id === inputId.value);
-        if (idx !== -1) {
-          tasks[idx] = {
-            ...tasks[idx],
-            ...payload,
-            completed: payload.status === 'done' ? true : tasks[idx].completed,
-            updatedAt: now,
-          };
-        }
+        // --- UUSI LOGIIKKA: MUOKKAUS ---
+        // Käytämme exportattua funktiota
+        tasks = muokkaaTehtava(tasks, inputId.value, payload);
       } else {
+        // Lisäys (jätetään vielä vanhalle logiikalle)
         tasks.push({
           id: generateId(),
           ...payload,
@@ -191,6 +215,7 @@ if (typeof document !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (action === 'complete') {
+        // Tässä voisi käyttää myös muokkaaTehtavaa, mutta pidetään yksinkertaisena
         const t = tasks[idx];
         const nextCompleted = !t.completed;
         tasks[idx] = {
@@ -208,10 +233,7 @@ if (typeof document !== 'undefined') {
       }
       if (action === 'delete') {
         if (!window.confirm('Delete this task?')) return;
-
-        // KÄYTETÄÄN EXPORTATTUA FUNKTIOTA
         tasks = poistaTehtava(tasks, id);
-
         saveTasks(tasks);
         render();
       }

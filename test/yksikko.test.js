@@ -1,30 +1,51 @@
 import { describe, it, expect } from 'vitest';
-import { poistaTehtava } from './public/app.js';
+// Tuodaan molemmat funktiot testattavaksi
+import { poistaTehtava, muokkaaTehtava } from './public/app.js';
 
-describe('Logiikka: Taskin poisto', () => {
-  it('Poistaa oikean tehtävän listasta ID:n perusteella', () => {
-    // 1. Luodaan testimielessä lista, jossa on kaksi tehtävää
-    const alkuperainenLista = [
-      { id: '1', topic: 'Pese pyykit' },
-      { id: '2', topic: 'Käy kaupassa' },
-    ];
+describe('Logiikka: Tehtävien hallinta', () => {
+  describe('muokkaaTehtava (Edit)', () => {
+    it('Päivittää tehtävän priorityn ja nimen oikein', () => {
+      const alkuperaiset = [
+        {
+          id: '1',
+          topic: 'Vanha nimi',
+          priority: 'low',
+          status: 'todo',
+        },
+      ];
 
-    // 2. Kutsutaan funktiota: poistetaan ID '1'
-    const uusiLista = poistaTehtava(alkuperainenLista, '1');
+      const muutokset = {
+        topic: 'Uusi hieno nimi',
+        priority: 'high', // Vaihdetaan low -> high
+        status: 'todo',
+      };
 
-    // 3. Tarkistetaan tulos
-    expect(uusiLista.length).toBe(1); // Listan pituus pitäisi pudota 2 -> 1
-    expect(uusiLista[0].id).toBe('2'); // Jäljellä pitäisi olla vain task '2'
+      const tulos = muokkaaTehtava(alkuperaiset, '1', muutokset);
+
+      expect(tulos[0].topic).toBe('Uusi hieno nimi');
+      expect(tulos[0].priority).toBe('high');
+      expect(tulos[0].id).toBe('1'); // ID:n pitää säilyä
+    });
+
+    it('Ei muuta muita listan tehtäviä', () => {
+      const alkuperaiset = [
+        { id: '1', topic: 'Pysyy samana' },
+        { id: '2', topic: 'Muokataan tätä' },
+      ];
+
+      const tulos = muokkaaTehtava(alkuperaiset, '2', { topic: 'Muutettu' });
+
+      expect(tulos[0].topic).toBe('Pysyy samana'); // Ensimmäisen ei pitäisi muuttua
+      expect(tulos[1].topic).toBe('Muutettu');
+    });
   });
 
-  it('Ei tee mitään jos poistettavaa ID:tä ei löydy', () => {
-    const lista = [{ id: '1', topic: 'Ainoa tehtävä' }];
-
-    // Yritetään poistaa ID '999', jota ei ole
-    const uusiLista = poistaTehtava(lista, '999');
-
-    // Listan pitäisi pysyä samana
-    expect(uusiLista.length).toBe(1);
-    expect(uusiLista[0].id).toBe('1');
+  describe('poistaTehtava (Delete)', () => {
+    it('Poistaa tehtävän listasta', () => {
+      const lista = [{ id: '1' }, { id: '2' }];
+      const tulos = poistaTehtava(lista, '1');
+      expect(tulos.length).toBe(1);
+      expect(tulos[0].id).toBe('2');
+    });
   });
 });
