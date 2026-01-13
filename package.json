@@ -19,6 +19,7 @@
   "main": "server.js",
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "cypress": "^15.8.2",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "vitest": "^4.0.8"
