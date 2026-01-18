@@ -204,7 +204,7 @@ button:disabled {
 
 .empty {
   margin: 8px 0 0;
-  color: #f0f0f0;
+  color: red;
   font-style: italic;
 }
 
