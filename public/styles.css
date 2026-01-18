@@ -204,7 +204,7 @@ button:disabled {
 
 .empty {
   margin: 8px 0 0;
-  color: var(--muted);
+  color: #f0f0f0;
   font-style: italic;
 }
 
@@ -229,4 +229,40 @@ button:disabled {
   .task .controls {
     justify-content: flex-end;
   }
+}
+
+/* --- Suodatusnapit --- */
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: #f0f0f0;
+  font-weight: 500;
+}
+
+.filter-btn {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: black;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.filter-btn:hover {
+  background-color: #d0cfcf;
+}
+
+.filter-btn.active {
+  background-color: var(--card);
+  color: white;
+  border: 3px solid #e2066f;
 }

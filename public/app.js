@@ -6,18 +6,9 @@ export function poistaTehtava(nykyisetTehtavat, poistettavaId) {
   return nykyisetTehtavat.filter((task) => task.id !== poistettavaId);
 }
 
-/**
- * Päivittää yhden tehtävän tiedot listassa.
- * @param {Array} tasks - Kaikki tehtävät
- * @param {string} id - Muokattavan tehtävän ID
- * @param {Object} uudetTiedot - Objekti, jossa on päivitettävät kentät (esim. topic, priority)
- * @returns {Array} Uusi lista tehtävistä
- */
 export function muokkaaTehtava(tasks, id, uudetTiedot) {
   return tasks.map((task) => {
-    if (task.id !== id) return task; // Jos ei ole tämä taski, palauta sellaisenaan
-
-    // Logiikka: Jos status on 'done', completed on true. Muuten pidetään vanha tai false.
+    if (task.id !== id) return task;
     const isCompleted =
       uudetTiedot.status === 'done'
         ? true
@@ -26,8 +17,8 @@ export function muokkaaTehtava(tasks, id, uudetTiedot) {
         : task.completed;
 
     return {
-      ...task, // Vanhat tiedot pohjalle
-      ...uudetTiedot, // Uudet tiedot päälle
+      ...task,
+      ...uudetTiedot,
       completed: isCompleted,
       updatedAt: Date.now(),
     };
@@ -41,6 +32,9 @@ if (typeof document !== 'undefined') {
   (function () {
     'use strict';
     const STORAGE_KEY = 'todo_tasks_v1';
+
+    // Tila: mikä suodatin on valittuna (oletus: 'all')
+    let currentFilter = 'all';
 
     function loadTasks() {
       try {
@@ -78,17 +72,44 @@ if (typeof document !== 'undefined') {
     const list = document.getElementById('task-list');
     const emptyState = document.getElementById('empty-state');
 
+    // Haetaan suodatusnapit HTML:stä
+    const filterButtons = document.querySelectorAll('.filter-btn');
+
     let tasks = loadTasks();
 
     function render() {
       list.innerHTML = '';
-      if (!tasks.length) {
+
+      // 1. Suodatetaan taskit valitun prioriteetin mukaan
+      const visibleTasks = tasks.filter((task) => {
+        if (currentFilter === 'all') return true;
+        return task.priority === currentFilter;
+      });
+
+      // 2. Päivitetään nappien ulkoasu (lisätään/poistetaan 'active' luokka)
+      filterButtons.forEach((btn) => {
+        if (btn.dataset.filter === currentFilter) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // 3. Käsitellään tyhjä tila
+      if (!visibleTasks.length) {
         emptyState.style.display = 'block';
+        // Näytetään järkevä viesti riippuen siitä, onko filtteri päällä
+        if (tasks.length > 0 && currentFilter !== 'all') {
+          emptyState.textContent = `No tasks found with priority: ${currentFilter}`;
+        } else {
+          emptyState.textContent = 'No tasks yet. Add your first task above.';
+        }
         return;
       }
       emptyState.style.display = 'none';
 
-      tasks
+      // 4. Järjestetään ja piirretään lista
+      visibleTasks
         .sort((a, b) => {
           if (a.completed !== b.completed) return a.completed ? 1 : -1;
           const prioRank = { high: 0, medium: 1, low: 2 };
@@ -129,6 +150,16 @@ if (typeof document !== 'undefined') {
         });
     }
 
+    // --- Tapahtumakuuntelijat suodatusnapeille ---
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Estetään form submit jos nappi on formin sisällä (varmuuden vuoksi)
+        currentFilter = e.target.dataset.filter;
+        render();
+      });
+    });
+
+    // ... Muut apufunktiot (badgeForStatus, escapeHtml, resetForm) pysyvät samoina ...
     function badgeForStatus(status) {
       const label =
         {
@@ -158,6 +189,7 @@ if (typeof document !== 'undefined') {
       saveBtn.textContent = 'Save Task';
     }
 
+    // ... Formin ja listan kuuntelijat pysyvät samoina ...
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const now = Date.now();
@@ -173,11 +205,8 @@ if (typeof document !== 'undefined') {
       }
 
       if (inputId.value) {
-        // --- UUSI LOGIIKKA: MUOKKAUS ---
-        // Käytämme exportattua funktiota
         tasks = muokkaaTehtava(tasks, inputId.value, payload);
       } else {
-        // Lisäys (jätetään vielä vanhalle logiikalle)
         tasks.push({
           id: generateId(),
           ...payload,
@@ -215,7 +244,6 @@ if (typeof document !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (action === 'complete') {
-        // Tässä voisi käyttää myös muokkaaTehtavaa, mutta pidetään yksinkertaisena
         const t = tasks[idx];
         const nextCompleted = !t.completed;
         tasks[idx] = {
@@ -239,6 +267,7 @@ if (typeof document !== 'undefined') {
       }
     });
 
+    // Käynnistys
     render();
   })();
 }
